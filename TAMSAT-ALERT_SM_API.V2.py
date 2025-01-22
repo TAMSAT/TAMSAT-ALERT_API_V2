@@ -1,27 +1,25 @@
 """
-Updated TAMSAT-ALERT API (soil moisture monitoring and forecasting)
+TAMSAT-ALERT API Version 2 (soil moisture monitoring and forecasting)
 
-The revised TAMSAT-ALERT API is based on Vicky Boult's original API
+The revised TAMSAT-ALERT API (V2) is based on Vicky Boult's original API
 that only consided end of season forecasts of WRSI and has been updated
 to provide the following:
     1. Uses the most recent version of TAMSAT soil moisture developed 
        within EOCIS.
-    2. Account for spatially variable start and end of growing season.
-       These need to be defined in advance.
+    2. Can handle spatially variable start and end dates for the growing 
+       season. These need to be defined in advance.
     3. Weight the TAMSAT-ALERT soil moisture forecasts using spatially
        variable ECMWF-S2S tercile precipitation forecasts.
     4. Additional metrics to provide WRSI from season start to current
-       .date
+       date.
 
 The code should be executed as follows (example arguments provided):
-python TAMSAT-ALERT_API.V2.py -poi_start=2024-03-01 -poi_end=2024-08-31 -current_date=2024-05-10 -clim_years=1991,2020 -coords=6,-5,32,43 -weights=0.33,0.34,0.33
-
-To do:
-- Handle point-based values
+python TAMSAT-ALERT_SM_API.V2.py -poi_start=2024-03-01 -poi_end=2024-07-31 -current_date=2024-05-15 -clim_years=1991,2020 -coords=6,-5,32,43 -weights=0.33,0.34,0.33
 
 Authors: R. Maidment, V. Boult
 """
 
+import sys
 import wget
 from datetime import datetime as dt
 from datetime import timedelta as td
@@ -32,7 +30,6 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os.path
 import scipy.stats
-import requests
 import pandas as pd
 import cartopy.crs as ccrs
 from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
@@ -42,6 +39,11 @@ import matplotlib.colors as mcolors
 import argparse
 import warnings
 warnings.filterwarnings("ignore")
+
+
+def makedir(path):
+        if not os.path.exists(path):
+            os.makedirs(path)
 
 
 def parse_poi_start(value):
@@ -67,12 +69,17 @@ def parse_current_date(value):
     Custom parser to handle current_date as either a string in the format YYYY-MM-DD
     or the exact string 'LATEST'.
     """
+    cutoff_date = dt(2024, 1, 1).date()  # Define the cutoff date
     if value == "LATEST":
         return value  # Return the valid string directly
     try:
         # Try to parse the date string in the format YYYY-MM-DD
-        #dt.strptime(value, "%Y-%m-%d")
-        return dt.strptime(value, "%Y-%m-%d").date()
+        parsed_date = dt.strptime(value, "%Y-%m-%d").date()
+        if parsed_date <= cutoff_date:
+            raise argparse.ArgumentTypeError(
+                f"Invalid date. Dates must be after {cutoff_date}."
+            )
+        return parsed_date
     except ValueError:
         raise argparse.ArgumentTypeError("Invalid format. current_date must be 'LATEST' or a date in the format YYYY-MM-DD (e.g., 2025-01-16).")
 
@@ -140,7 +147,7 @@ def create_parser():
     return(parser)
 
 
-def check_current_date(current_date, sm_hist_dir):
+def check_current_date(current_date, sm_hist_dir, poi_end):
     # Reset current_date if current_date is after the last soil moisture day
     # Get last date of soil moisture
     sm_flist = []
@@ -156,6 +163,10 @@ def check_current_date(current_date, sm_hist_dir):
     if current_date == 'LATEST':
         current_date = sm_last_date
         print('-> Latest date is %s' % dt.strftime(sm_last_date, '%Y-%m-%d'))
+    
+    if (poi_end.values.max() - current_date).days > 160:
+        print('-> Warning! the season end is beyond the forecast window: cannot forecast beyond 160 days')
+        sys.exit()
     
     if current_date > sm_last_date:
         current_date = sm_last_date
@@ -1216,32 +1227,42 @@ def create_inputs_summary_csv(csv_fname):
 
 # Wrapper for everything
 def wrapper(current_date):
-    # Post-process poi_start and poi_end so that if spatially varying, dates are in datetime format
-    # and if fixed, a map of datetime objects is created
+    # 1. Post-process poi_start and poi_end so that if spatially varying, dates are in datetime format and if fixed, a map of datetime objects is created
     poi_start = check_poi(poi_start_in, lon_min, lon_max, lat_min, lat_max)
     poi_end = check_poi(poi_end_in, lon_min, lon_max, lat_min, lat_max)
-    current_date = check_current_date(current_date, sm_hist_dir)
-    # Post-process weights so that they are in an xarray dataset with some lon/lat domain as sm
-    # Also retrive the start/end dates to apply the tercile weights over
+    # 2. Does some checks on the current_date before proceeding 
+    current_date = check_current_date(current_date, sm_hist_dir, poi_end)
+    # 3. Given inputs, get years needed
     yearstart, yearend = get_year_range(clim_start_year, clim_end_year, poi_start, poi_end)
+    # 4. Download soil moisture and rainfall (for weighting)
     download_historical_data(remoteurl, 'sm_hist', sm_version, yearstart, yearend)
     download_historical_data(remoteurl, 'rfe_hist', rfe_version, yearstart, yearend)
+    # 5. Download TAMSAT-ALERT forecasts
     fcast_date, sm_fcast_fname = download_forecast_data(remoteurl, sm_fcast_dir, sm_version, current_date)
+    # 6. Post-process weights so that they are in an xarray dataset retrives start/end dates to apply the tercile weights over
     ds_weights, met_forc_start_date, met_forc_end_date = process_weights(weights, current_date, fcast_date, poi_end)
+    # 7. Import recent soil moisture estimates and forecasts and subset
     sm_recent_roi, sm_fcast_roi = import_sm_data(poi_start, poi_end, current_date, sm_hist_dir, sm_fcast_fname, lon_min, lon_max, lat_min, lat_max)
+    # 8. Splice together recent soil moisture estimates and forecasts
     sm_poi_roi, sm_full_roi = splice_sm_data(poi_start, poi_end, fcast_date, sm_recent_roi, sm_fcast_roi)
-    # Check
+    # Sanity check
     #for yyyy in np.arange(2005, 2020):
     #    sm_poi_roi.sm_c4grass.sel(lon=38, lat=3, method='nearest', ens_year=yyyy).plot()
     #
     #plt.show()
+    # 9. Read in rainfall and subset
     precip_hist_roi = import_hist_precip(ens_clim_start_year, ens_clim_end_year, rfe_hist_dir, lon_min, lon_max, lat_min, lat_max)
+    # 10. Read in historical soil moisture estimates
     sm_hist_roi = import_hist_sm(clim_start_year, clim_end_year, sm_hist_dir, lon_min, lon_max, lat_min, lat_max, True)
+    # 11. Given supplied weights (probabilites), produce rainfall-based weights (e.g. a weight for each ensemble year)
     precip_weights = weight_forecast(precip_hist_roi, met_forc_start_date, met_forc_end_date, poi_start, ens_clim_start_year, ens_clim_end_year, ds_weights)
+    # 12. Compute soil moisture climatology
     sm_hist_full_roi, sm_hist_poi_roi_mean, sm_hist_current_roi, sm_hist_current_roi_mean = calc_sm_climatology(sm_hist_roi, clim_start_year, clim_end_year, fcast_date, poi_start, poi_end)
     #sm_hist_full_roi.sm_c4grass.sel(lon=39, lat=-3, method='nearest', ens_year=2005).plot()
+    # 13. Produce summmary fields and output text
     ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ensemble_forecast = summary_stats(sm_hist_poi_roi_mean, precip_weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year)
     forecast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp = date_stamps(fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max)
+    # 14. Produce API outputs (data and plots)
     output_forecasts(ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp)
 
 
@@ -1249,7 +1270,6 @@ def wrapper(current_date):
 if __name__ == '__main__':
     parser = create_parser()
     args = parser.parse_args()
-    
     poi_start_in = args.poi_start
     poi_end_in = args.poi_end
     current_date = args.current_date
@@ -1257,18 +1277,20 @@ if __name__ == '__main__':
     lat_max, lat_min, lon_min, lon_max = args.coords
     weights = args.weights
     
+    """   
     #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
-    #poi_start_in = dt.strptime('2024-03-01', '%Y-%m-%d').date()
-    #poi_end_in = dt.strptime('2024-08-31', '%Y-%m-%d').date()
-    #current_date = dt.strptime('2024-04-10', '%Y-%m-%d').date()
-    #clim_start_year = 1991
-    #clim_end_year = 2020
-    #lon_min = 32.0
-    #lon_max = 43.0
-    #lat_min = -5.0
-    #lat_max = 6.0
-    #weights = [float(0.33), float(0.34), float(0.33)]
+    poi_start_in = dt.strptime('2024-03-01', '%Y-%m-%d').date()
+    poi_end_in = dt.strptime('2024-08-31', '%Y-%m-%d').date()
+    current_date = dt.strptime('2024-04-10', '%Y-%m-%d').date()
+    clim_start_year = 1991
+    clim_end_year = 2020
+    lon_min = 32.0
+    lon_max = 43.0
+    lat_min = -5.0
+    lat_max = 6.0
+    weights = [float(0.33), float(0.34), float(0.33)]
     #weights = 'ECMWF_S2S'
+    """
     
     print('==================================================') 
     print('--- Executing the TAMSAT-ALERT API (Version 2) ---')
@@ -1305,10 +1327,7 @@ if __name__ == '__main__':
     rfe_hist_dir = os.path.join(inputdir, 'rainfall_historical', 'v' + rfe_version)
     ecmwfs2s_dir = os.path.join(inputdir, 'ecmwfs2s_tercile_forecasts')
     
-    def makedir(path):
-        if not os.path.exists(path):
-            os.makedirs(path)
-    
+    # Create directories
     makedir(datadir)
     makedir(plotsdir)
     makedir(sm_hist_dir)
@@ -1316,6 +1335,8 @@ if __name__ == '__main__':
     makedir(rfe_hist_dir)
     makedir(ecmwfs2s_dir)
     
+    # Create API inputs summary file
     create_inputs_summary_csv(os.path.join(outputdir, 'API_input_arguments.csv'))
     
+    # Execute API
     wrapper(current_date)
