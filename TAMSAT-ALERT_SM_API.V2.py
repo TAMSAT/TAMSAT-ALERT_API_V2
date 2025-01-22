@@ -1230,13 +1230,13 @@ def wrapper(current_date):
     # 1. Post-process poi_start and poi_end so that if spatially varying, dates are in datetime format and if fixed, a map of datetime objects is created
     poi_start = check_poi(poi_start_in, lon_min, lon_max, lat_min, lat_max)
     poi_end = check_poi(poi_end_in, lon_min, lon_max, lat_min, lat_max)
-    # 2. Does some checks on the current_date before proceeding 
-    current_date = check_current_date(current_date, sm_hist_dir, poi_end)
-    # 3. Given inputs, get years needed
+    # 2. Given inputs, get years needed
     yearstart, yearend = get_year_range(clim_start_year, clim_end_year, poi_start, poi_end)
-    # 4. Download soil moisture and rainfall (for weighting)
+    # 3. Download soil moisture and rainfall (for weighting)
     download_historical_data(remoteurl, 'sm_hist', sm_version, yearstart, yearend)
     download_historical_data(remoteurl, 'rfe_hist', rfe_version, yearstart, yearend)
+    # 4. Does some checks on the current_date before proceeding 
+    current_date = check_current_date(current_date, sm_hist_dir, poi_end)
     # 5. Download TAMSAT-ALERT forecasts
     fcast_date, sm_fcast_fname = download_forecast_data(remoteurl, sm_fcast_dir, sm_version, current_date)
     # 6. Post-process weights so that they are in an xarray dataset retrives start/end dates to apply the tercile weights over
