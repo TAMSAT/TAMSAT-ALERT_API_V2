@@ -156,6 +156,7 @@ def check_current_date(current_date, sm_hist_dir, poi_end):
             if name.endswith('.nc'):
                 sm_flist.append(os.path.join(root, name))
     
+    sm_flist.sort()
     ds_sm = xr.open_dataset(sm_flist[-1])
     sm_last_date = pd.to_datetime(ds_sm.time.values[-1]).date()
     ds_sm.close()
