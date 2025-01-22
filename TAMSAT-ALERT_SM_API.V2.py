@@ -51,7 +51,7 @@ def parse_poi_start(value):
     """
     try:
         # Check if the value is a valid date in the format YYYY-MM-DD
-        dt.strptime(value, "%Y-%m-%d")
+        #dt.strptime(value, "%Y-%m-%d")
         return dt.strptime(value, "%Y-%m-%d").date()
     except ValueError:
         # If not a date, check if it's a valid file path ending with '.nc'
@@ -71,7 +71,7 @@ def parse_current_date(value):
         return value  # Return the valid string directly
     try:
         # Try to parse the date string in the format YYYY-MM-DD
-        dt.strptime(value, "%Y-%m-%d")
+        #dt.strptime(value, "%Y-%m-%d")
         return dt.strptime(value, "%Y-%m-%d").date()
     except ValueError:
         raise argparse.ArgumentTypeError("Invalid format. current_date must be 'LATEST' or a date in the format YYYY-MM-DD (e.g., 2025-01-16).")
@@ -139,67 +139,6 @@ def create_parser():
     parser.add_argument('-weights', type=parse_weights, help="Weights can be a list of three numbers if using own tercile weights (e.g. -weights=0.3,0.4,0.3 which corresponds to [above, normal, below]) or 'ECMWF_S2S' if using the S2S tercile forecasts from the European Centre for Medium Range Weather Forecasts.", required=True)
     return(parser)
 
-"""
-args = parser.parse_args()
-
-poi_start_in = args.poi_start
-poi_end_in = args.poi_end
-current_date = args.current_date
-clim_start_year, clim_end_year = args.clim_years
-lat_max, lat_min, lon_min, lon_max = args.coords
-weights = args.weights
-
-print(poi_start_in)
-print(poi_end_in)
-print(current_date)
-print(clim_start_year, clim_end_year)
-print(lat_max, lat_min, lon_min, lon_max)
-print(weights)
-
-#poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
-#poi_end_in = dt.strptime('2024-10-31', '%Y-%m-%d').date()
-#current_date = dt.strptime('2024-06-10', '%Y-%m-%d').date()
-#lon_min = 32.0
-#lon_max = 43.0
-#lat_min = -5.0
-#lat_max = 6.0
-#weights = [float(0.33), float(0.34), float(0.33)]
-#weights = 'ECMWF_S2S'
-
-
-# Clim years for soil moisture forecasts
-ens_clim_start_year = 2005
-ens_clim_end_year = 2019
-
-# Dataset versions to use
-sm_version = '2.3.0'
-rfe_version = '3.1'
-
-# TAMSAT data URL
-remoteurl = 'https://gws-access.jasmin.ac.uk/public/tamsat/tamsat-alert-api_forcing_data'
-
-# Path of current .py file (all data and outputs will be saved here)
-cwd = os.getcwd()
-inputdir = os.path.join(cwd, 'input_data')
-outputdir = os.path.join(cwd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d'))
-datadir = os.path.join(outputdir, 'data')
-plotsdir = os.path.join(outputdir, 'plots')
-sm_hist_dir = os.path.join(inputdir, 'soil_moisture_historical', 'v' + sm_version)
-sm_fcast_dir = os.path.join(inputdir, 'soil_moisture_forecasts', 'v' + sm_version)
-rfe_hist_dir = os.path.join(inputdir, 'rainfall_historical', 'v' + rfe_version)
-ecmwfs2s_dir = os.path.join(inputdir, 'ecmwfs2s_tercile_forecasts')
-
-def makedir(path):
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-makedir(datadir)
-makedir(plotsdir)
-makedir(sm_hist_dir)
-makedir(sm_fcast_dir)
-makedir(rfe_hist_dir)
-makedir(ecmwfs2s_dir)
-"""
 
 def check_current_date(current_date, sm_hist_dir):
     # Reset current_date if current_date is after the last soil moisture day
@@ -935,7 +874,7 @@ def terciles_text(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_w
     print("    Lower : %s" % str(round(lower_terc, 3)))
     print("    Middle: %s" % str(round(middle_terc, 3)))
     print("    Upper : %s" % str(round(upper_terc, 3)))
-    
+
 # Plot probability distributions
 def prob_dist_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
     # Define tercile boundaries
@@ -1118,7 +1057,7 @@ def wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr
                                             sm_wrsi_current_anom.to_dataset(name='wrsi_current_anom'),
                                             sm_wrsi_current_percent_anom.to_dataset(name='wrsi_current_percent_anom')])
     
-    fname = os.path.join(datadir, 'wrsi_current_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
+    fname = os.path.join(datadir, 'wrsi-current_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
     ds_wrsi_current.to_netcdf(fname)
     
     # Checks
@@ -1252,8 +1191,31 @@ def prob_map_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_w
     plt.savefig(fname)
     plt.close()
 
+# Create summary of API input arguments
+def create_inputs_summary_csv(csv_fname):
+    # Create text file summarising input arguments
+    data = [
+        ["Season Start", poi_start_in],
+        ["Season End", poi_end_in],
+        ["Current Date", current_date],
+        ["Climatological Period", f"{clim_start_year}-{clim_end_year}"],
+        ["Domain Coordinates", f"N:{lat_max}, S:{lat_min}, W:{lon_min}, E:{lon_max}"],
+        [
+            "Tercile Weights",
+            "Derived from ECMWF S2S precipitation forecasts"
+            if weights == "ECMWF_S2S"
+            else f"Upper:{weights[0]}, Middle:{weights[1]}, Lower:{weights[2]}"
+        ],
+    ]
+    
+    # Convert to a DataFrame
+    df = pd.DataFrame(data, columns=["Attribute", "Value"])
+    
+    # Save to a CSV file
+    df.to_csv(csv_fname, index=False)
 
-def forecast_wrapper(current_date):
+# Wrapper for everything
+def wrapper(current_date):
     # Post-process poi_start and poi_end so that if spatially varying, dates are in datetime format
     # and if fixed, a map of datetime objects is created
     poi_start = check_poi(poi_start_in, lon_min, lon_max, lat_min, lat_max)
@@ -1294,7 +1256,20 @@ if __name__ == '__main__':
     clim_start_year, clim_end_year = args.clim_years
     lat_max, lat_min, lon_min, lon_max = args.coords
     weights = args.weights
-
+    
+    #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
+    #poi_start_in = dt.strptime('2024-03-01', '%Y-%m-%d').date()
+    #poi_end_in = dt.strptime('2024-08-31', '%Y-%m-%d').date()
+    #current_date = dt.strptime('2024-04-10', '%Y-%m-%d').date()
+    #clim_start_year = 1991
+    #clim_end_year = 2020
+    #lon_min = 32.0
+    #lon_max = 43.0
+    #lat_min = -5.0
+    #lat_max = 6.0
+    #weights = [float(0.33), float(0.34), float(0.33)]
+    #weights = 'ECMWF_S2S'
+    
     print('==================================================') 
     print('--- Executing the TAMSAT-ALERT API (Version 2) ---')
     print('==================================================') 
@@ -1307,16 +1282,6 @@ if __name__ == '__main__':
         print('Tercile weights: Derived from ECMWF S2S precipitation forecasts')
     else: 
         print('Tercile weights: Upper:%s, Middle:%s, Lower:%s' % (weights[0], weights[1], weights[2]))
-    
-    #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
-    #poi_end_in = dt.strptime('2024-10-31', '%Y-%m-%d').date()
-    #current_date = dt.strptime('2024-06-10', '%Y-%m-%d').date()
-    #lon_min = 32.0
-    #lon_max = 43.0
-    #lat_min = -5.0
-    #lat_max = 6.0
-    #weights = [float(0.33), float(0.34), float(0.33)]
-    #weights = 'ECMWF_S2S'
     
     # Clim years for soil moisture forecasts
     ens_clim_start_year = 2005
@@ -1332,7 +1297,7 @@ if __name__ == '__main__':
     # Path of current .py file (all data and outputs will be saved here)
     cwd = os.getcwd()
     inputdir = os.path.join(cwd, 'input_data')
-    outputdir = os.path.join(cwd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d'))
+    outputdir = os.path.join(cwd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H:%M:%S'))
     datadir = os.path.join(outputdir, 'data')
     plotsdir = os.path.join(outputdir, 'plots')
     sm_hist_dir = os.path.join(inputdir, 'soil_moisture_historical', 'v' + sm_version)
@@ -1351,9 +1316,6 @@ if __name__ == '__main__':
     makedir(rfe_hist_dir)
     makedir(ecmwfs2s_dir)
     
-    forecast_wrapper(current_date)
+    create_inputs_summary_csv(os.path.join(outputdir, 'API_input_arguments.csv'))
     
-
-# Rank
-#sm_hist_current_roi.sm_c4grass.sel(lon=38, lat=2, method='nearest', ens_year=2006).values
-#sm_hist_current_roi.mean(dim='time').chunk(dict(ens_year=-1)).rank(dim='ens_year')
+    wrapper(current_date)
