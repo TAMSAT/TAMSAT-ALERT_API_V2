@@ -14,8 +14,11 @@ to provide the following:
        date.
 
 The code should be executed as follows (example arguments provided):
-python TAMSAT-ALERT_SM_API.V2.py -poi_start=2024-03-01 -poi_end=2024-07-31 -current_date=2024-05-15 -clim_years=1991,2020 -coords=6,-5,32,43 -weights=0.33,0.34,0.33
+python TAMSAT-ALERT_SM_API.V2.py -poi_start=2024-03-01 -poi_end=2024-05-31 -current_date=2024-04-11 -clim_years=1991,2020 -coords=6,-5,32,43 -weights=0.33,0.34,0.33
 
+To do:
+- exit is current_date is after poi_end
+ 
 Authors: R. Maidment, V. Boult
 """
 
@@ -778,8 +781,9 @@ def calc_sm_climatology(sm_hist_roi, clim_start_year, clim_end_year, fcast_date,
     #
     #plt.show()
     sm_hist_current_roi_mean = sm_hist_current_roi.mean(dim='time', skipna=True).mean(dim='ens_year', skipna=True)
+    sm_hist_current_roi_sd = sm_hist_current_roi.mean(dim='time', skipna=True).std(dim='ens_year', skipna=True)
     
-    return sm_hist_full_roi.sm_c4grass.sel(ens_year=slice(ens_clim_start_year, ens_clim_end_year)).to_dataset(), sm_hist_poi_roi_mean, sm_hist_current_roi, sm_hist_current_roi_mean
+    return sm_hist_full_roi.sm_c4grass.sel(ens_year=slice(ens_clim_start_year, ens_clim_end_year)).to_dataset(), sm_hist_poi_roi_mean, sm_hist_current_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd
 
 # Summary statistics
 def summary_stats(sm_hist_poi_roi_mean, weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year):
@@ -808,8 +812,12 @@ def summary_stats(sm_hist_poi_roi_mean, weights, sm_poi_roi, sm_full_roi, ens_cl
     ens_sd_wrsi_xr = xr.DataArray(ens_sd_wrsi, coords=[lon, lat], dims=['lon', 'lat'])
     clim_mean_wrsi_xr = xr.DataArray(clim_mean_wrsi, coords=[lon, lat], dims=['lon', 'lat'])
     clim_sd_wrsi_xr = xr.DataArray(clim_sd_wrsi, coords=[lon, lat], dims=['lon', 'lat'])
+
+    # Compute anom and percent anom
+    wrsi_forecast_anom = ens_mean_wrsi_xr - clim_mean_wrsi_xr
+    wrsi_forecast_percent_anom = (ens_mean_wrsi_xr / clim_mean_wrsi_xr) * 100
     
-    return ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ensemble_forecast
+    return ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast
 
 # Date stamps for output files
 def date_stamps(fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max):
@@ -828,40 +836,43 @@ def date_stamps(fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_m
         tmp_date = datetime.datetime(2020 ,poi_months[mo],1).strftime("%b")[0]
         poi_str += tmp_date
     
-    poi_stamp = poi_str + '-' + str(poi_year)
+    poi_stamp = poi_str + '' + str(poi_year)
     
     #if lon_point != "NA":
     #    loc_stamp = str(lon_point) + "_" + str(lat_point)
     #else:
-    loc_stamp = str(lon_min) + "_" + str(lon_max) + "_" + str(lat_min) + "_" + str(lat_max)
+    loc_stamp = str(lon_min) + "-" + str(lon_max) + "-" + str(lat_min) + "-" + str(lat_max)
     
     return fcast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp
 
 # Outputs
-def output_forecasts(ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp):    
+def output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp):    
     # Save output files
-    ds_ens_mean_wrsi = ens_mean_wrsi_xr.to_dataset(name='ens_mean_wrsi')
-    ds_ens_sd_wrsi = ens_sd_wrsi_xr.to_dataset(name='ens_sd_wrsi')
-    ds_clim_mean_wrsi = clim_mean_wrsi_xr.to_dataset(name='clim_mean_wrsi')
-    ds_clim_sd_wrsi = clim_sd_wrsi_xr.to_dataset(name='clim_sd_wrsi')
-    ds_out = xr.combine_by_coords([ds_ens_mean_wrsi, ds_ens_sd_wrsi, ds_clim_mean_wrsi, ds_clim_sd_wrsi])
-    fname = os.path.join(datadir, 'wrsi_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
-    ds_out.to_netcdf(fname)
-    fname = os.path.join(datadir, 'ensemble_forecast_wrsi_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
+    ds_ens_mean_wrsi = ens_mean_wrsi_xr.to_dataset(name='wrsi_forecast_ens_mean')
+    ds_ens_sd_wrsi = ens_sd_wrsi_xr.to_dataset(name='wrsi_forecast_ens_sd')
+    ds_clim_mean_wrsi = clim_mean_wrsi_xr.to_dataset(name='wrsi_clim')
+    ds_clim_sd_wrsi = clim_sd_wrsi_xr.to_dataset(name='wrsi_sd')
+    ds_wrsi_forecast_anom = wrsi_forecast_anom.to_dataset(name='wrsi_forecast_anom')
+    ds_wrsi_forecast_percent_anom = wrsi_forecast_percent_anom.to_dataset(name='wrsi_forecast_percent_anom')
+    ds_out = xr.combine_by_coords([ds_ens_mean_wrsi, ds_ens_sd_wrsi, ds_clim_mean_wrsi, ds_clim_sd_wrsi, ds_wrsi_forecast_anom, ds_wrsi_forecast_percent_anom])
+    fname = os.path.join(datadir, 'wrsi-forecast_' + poi_stamp + '_' + forecast_stamp + '.nc')
+    ds_out.transpose().to_netcdf(fname)
+    #fname = os.path.join(datadir, 'ensemble_forecast_wrsi_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
+    fname = os.path.join(datadir, 'ensemble-wrsi-forecast_' + poi_stamp + '_' + forecast_stamp + '.nc')
     ensemble_forecast = ensemble_forecast.assign_coords(time=ensemble_forecast.time.values.astype("datetime64[s]"))
     ensemble_forecast.to_netcdf(fname)
     
-    terciles_text(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
-    prob_dist_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
-    ensemble_timeseries_plot(ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp)    
+    terciles_text(datadir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
+    prob_dist_plot(plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
+    ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp)    
     
     #if sys.argv[7] == "region":
-    wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp)
-    wrsi_forecast_plot(clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp)
-    prob_map_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
+    wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp)
+    wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp)
+    prob_map_plot(datadir, plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
 
 # Calculate tercile probabilities
-def terciles_text(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
+def terciles_text(datadir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
     # Calculate probability of lower tercile soil moisture
     a = scipy.stats.norm(clim_mean_wrsi_xr, clim_sd_wrsi_xr).ppf(0.33)
     b_lower = scipy.stats.norm(ens_mean_wrsi_xr, ens_sd_wrsi_xr).cdf(a)
@@ -880,7 +891,7 @@ def terciles_text(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_w
     df = pd.DataFrame({'Category': ['Probability of seasonal mean soil moisture (sm_c4grass/beta) falling into lower tercile: %s' % lower_terc.round(3), 
                             'Probability of seasonal mean soil moisture (sm_c4grass/beta) falling into middle tercile: %s' % middle_terc.round(3), 
                             'Probability of seasonal mean soil moisture (sm_c4grass/beta) falling into upper tercile: %s' % upper_terc.round(3)]})
-    fname = os.path.join(datadir, 'terciles_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.csv')
+    fname = os.path.join(datadir, 'terciles_' + poi_stamp + '_' + forecast_stamp + '.csv')
     df.to_csv(fname, header=False, index=False)
     print('-> Tercile probabilities for end of season WRSI:')
     print("    Lower : %s" % str(round(lower_terc, 3)))
@@ -888,7 +899,7 @@ def terciles_text(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_w
     print("    Upper : %s" % str(round(upper_terc, 3)))
 
 # Plot probability distributions
-def prob_dist_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
+def prob_dist_plot(plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
     # Define tercile boundaries
     lower_thresh = 0.33
     upper_thresh = 0.67
@@ -918,12 +929,12 @@ def prob_dist_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_
     plt.axvline(up_a, color = "grey", linestyle = "--")
     plt.legend(loc = 2)
     # Save plot
-    fname = os.path.join(plotsdir, 'probdist_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.png')
+    fname = os.path.join(plotsdir, 'probdist_' + poi_stamp + '_' + forecast_stamp + '.png')
     plt.savefig(fname, dpi=300)
     plt.close()
 
 # Plot ensemble forecast compared to climatology
-def ensemble_timeseries_plot(ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp):
+def ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp):
     # Create data frame of dates
     #date_labs = pd.to_datetime(ensemble_forecast['time'].values)
     date_labs = pd.to_datetime(sm_hist_full_roi['time'].values)
@@ -961,7 +972,7 @@ def ensemble_timeseries_plot(ensemble_forecast, fcast_date, poi_start, poi_end, 
     plt.close()
 
 # Plot WRSI forecast maps
-def wrsi_forecast_plot(clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp):
+def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp):
     # Extract lons and lats for plotting axies
     lons = clim_mean_wrsi_xr['lon'].values
     lats = clim_mean_wrsi_xr['lat'].values
@@ -971,15 +982,24 @@ def wrsi_forecast_plot(clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_
     percent_anom = (ens_mean_wrsi_xr / clim_mean_wrsi_xr) * 100
     # Save to netCDF - perc_anom
     percent_anom_xr = xr.DataArray(percent_anom, coords = [lons,lats], dims = ['longitude','latitude'])
-    fname = os.path.join(datadir, 'wrsi-forecast_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
-    percent_anom_xr.to_netcdf(fname)
+    #fname = os.path.join(datadir, 'wrsi-forecast_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
+    #percent_anom_xr.to_netcdf(fname)
     # Colormap setup - make 'bad' values grey
     BrBG_cust = matplotlib.cm.get_cmap("BrBG")
     BrBG_cust.set_bad(color = "silver")
     RdBu_cust = matplotlib.cm.get_cmap("RdBu")
     RdBu_cust.set_bad(color = "silver")
+    # Aspect ratio
+    lon_range = max(lons) - min(lons)
+    lat_range = max(lats) - min(lats)
+    aspect_ratio = lon_range / lat_range
+    num_subplots = 3
+    base_height = 8  # Height of each subplot row
+    fig_width = base_height * aspect_ratio * num_subplots
+    fig_height = base_height
     # Build plot
-    fig = plt.figure(figsize = (32,10))
+    #fig = plt.figure(figsize = (32, 10))
+    fig = plt.figure(figsize=(fig_width, fig_height))
     # Plot climatology
     clim_plt = fig.add_subplot(131, projection = ccrs.PlateCarree())
     clim_plt.set_extent([np.min(lons), np.max(lons), np.min(lats), np.max(lats)])
@@ -1042,12 +1062,12 @@ def wrsi_forecast_plot(clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_
     anom_plt.add_feature(cfeature.COASTLINE, linewidth = 2)
     anom_plt.add_feature(cfeature.BORDERS, linewidth = 2)
     # Save and show
-    fname = os.path.join(plotsdir, 'wrsi-forecast_map_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.png')
+    fname = os.path.join(plotsdir, 'wrsi-forecast_map_' + poi_stamp + '_' + forecast_stamp + '.png')
     plt.savefig(fname, dpi=300)
     plt.close()
 
 # Plot WRSI current maps
-def wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp):
+def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp):
     # WRSI current (from season start to current date)
     mask = (sm_recent_roi['time'] >= poi_start) & (sm_recent_roi['time'] <= current_date)
     sm_current = sm_recent_roi.where(mask)
@@ -1056,6 +1076,7 @@ def wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr
     
     # WRSI current climatology
     sm_wrsi_current_clim = sm_hist_current_roi_mean.sm_c4grass.transpose()
+    sm_wrsi_current_sd = sm_hist_current_roi_sd.sm_c4grass.transpose()
     
     # WRSI current anomaly
     sm_wrsi_current_anom = sm_wrsi_current - sm_wrsi_current_clim
@@ -1066,10 +1087,11 @@ def wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr
     # Save WRSI current to netCDF file
     ds_wrsi_current = xr.combine_by_coords([sm_wrsi_current.to_dataset(name='wrsi_current'),
                                             sm_wrsi_current_clim.to_dataset(name='wrsi_current_clim'),
+                                            sm_wrsi_current_sd.to_dataset(name='wrsi_current_sd'),
                                             sm_wrsi_current_anom.to_dataset(name='wrsi_current_anom'),
                                             sm_wrsi_current_percent_anom.to_dataset(name='wrsi_current_percent_anom')])
     
-    fname = os.path.join(datadir, 'wrsi-current_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
+    fname = os.path.join(datadir, 'wrsi-current_' + poi_stamp + '_' + currentdate_stamp + '.nc')
     ds_wrsi_current.to_netcdf(fname)
     
     # Checks
@@ -1091,8 +1113,17 @@ def wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr
     BrBG_cust.set_bad(color = "silver")
     RdBu_cust = matplotlib.cm.get_cmap("RdBu")
     RdBu_cust.set_bad(color = "silver")
+    # Aspect ratio
+    lon_range = max(lons) - min(lons)
+    lat_range = max(lats) - min(lats)
+    aspect_ratio = lon_range / lat_range
+    num_subplots = 3
+    base_height = 8  # Height of each subplot row
+    fig_width = base_height * aspect_ratio * num_subplots
+    fig_height = base_height
     # Build plot
-    fig = plt.figure(figsize = (32,10))
+    #fig = plt.figure(figsize = (32,10))
+    fig = plt.figure(figsize=(fig_width, fig_height))
     # Plot WRSI current climatology
     clim_plt = fig.add_subplot(131, projection = ccrs.PlateCarree())
     clim_plt.set_extent([np.min(lons), np.max(lons), np.min(lats), np.max(lats)])
@@ -1152,12 +1183,12 @@ def wrsi_current_plot(sm_recent_roi, sm_hist_current_roi_mean, clim_mean_wrsi_xr
     anom_plt.add_feature(cfeature.COASTLINE, linewidth = 2)
     anom_plt.add_feature(cfeature.BORDERS, linewidth = 2)
     # Save and show
-    fname = os.path.join(plotsdir, 'wrsi-current_map_' + poi_stamp + '_' + currentdate_stamp + '_' + loc_stamp + '.png')
+    fname = os.path.join(plotsdir, 'wrsi-current_map_' + poi_stamp + '_' + currentdate_stamp + '.png')
     plt.savefig(fname, dpi=300)
     plt.close()
 
 # Plot probability of lower tercile map
-def prob_map_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
+def prob_map_plot(datadir, plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
 # Extract lons and lats for plotting axies
     lons = clim_mean_wrsi_xr['lon'].values
     lats = clim_mean_wrsi_xr['lat'].values
@@ -1167,7 +1198,7 @@ def prob_map_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_w
     b_lower = scipy.stats.norm(ens_mean_wrsi_xr, ens_sd_wrsi_xr).cdf(a)
     # Save to netCDF - prob_lower_terc
     b_lower_xr = xr.DataArray(b_lower, coords = [lons,lats], dims = ['longitude','latitude'])
-    fname = os.path.join(datadir, 'prob_lower_tercile_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.nc')
+    fname = os.path.join(datadir, 'probability_lower_tercile_' + poi_stamp + '_' + forecast_stamp + '.nc')
     b_lower_xr.to_netcdf(fname)
     # Colormap setup - make 'bad' values grey
     c = mcolors.ColorConverter().to_rgb
@@ -1199,7 +1230,7 @@ def prob_map_plot(clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_w
     prob_plt.add_feature(cfeature.COASTLINE, linewidth = 2)
     prob_plt.add_feature(cfeature.BORDERS, linewidth = 2)
     # Save and show
-    fname = os.path.join(plotsdir, 'prob_map_plot_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.png')
+    fname = os.path.join(plotsdir, 'probability_map_' + poi_stamp + '_' + forecast_stamp + '.png')
     plt.savefig(fname)
     plt.close()
 
@@ -1227,7 +1258,7 @@ def create_inputs_summary_csv(csv_fname):
     df.to_csv(csv_fname, index=False)
 
 # Wrapper for everything
-def wrapper(current_date):
+def wrapper(wd, current_date):
     # 1. Post-process poi_start and poi_end so that if spatially varying, dates are in datetime format and if fixed, a map of datetime objects is created
     poi_start = check_poi(poi_start_in, lon_min, lon_max, lat_min, lat_max)
     poi_end = check_poi(poi_end_in, lon_min, lon_max, lat_min, lat_max)
@@ -1258,14 +1289,23 @@ def wrapper(current_date):
     # 11. Given supplied weights (probabilites), produce rainfall-based weights (e.g. a weight for each ensemble year)
     precip_weights = weight_forecast(precip_hist_roi, met_forc_start_date, met_forc_end_date, poi_start, ens_clim_start_year, ens_clim_end_year, ds_weights)
     # 12. Compute soil moisture climatology
-    sm_hist_full_roi, sm_hist_poi_roi_mean, sm_hist_current_roi, sm_hist_current_roi_mean = calc_sm_climatology(sm_hist_roi, clim_start_year, clim_end_year, fcast_date, poi_start, poi_end)
+    sm_hist_full_roi, sm_hist_poi_roi_mean, sm_hist_current_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd = calc_sm_climatology(sm_hist_roi, clim_start_year, clim_end_year, fcast_date, poi_start, poi_end)
     #sm_hist_full_roi.sm_c4grass.sel(lon=39, lat=-3, method='nearest', ens_year=2005).plot()
     # 13. Produce summmary fields and output text
-    ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ensemble_forecast = summary_stats(sm_hist_poi_roi_mean, precip_weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year)
+    ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast = summary_stats(sm_hist_poi_roi_mean, precip_weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year)
     forecast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp = date_stamps(fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max)
-    # 14. Produce API outputs (data and plots)
-    output_forecasts(ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp)
-
+    # 14. Make dirs to store outputs
+    outputdir = os.path.join(wd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + poi_stamp + '_' +  loc_stamp + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H:%M:%S'))
+    datadir = os.path.join(outputdir, 'data')
+    plotsdir = os.path.join(outputdir, 'plots')
+    makedir(datadir)
+    makedir(plotsdir)
+    print('-> Saving API outputs to: %s' % outputdir)
+    # 15. Create API inputs summary file
+    create_inputs_summary_csv(os.path.join(outputdir, 'API_input_arguments.csv'))
+    # 16. Produce API outputs (data and plots)
+    output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp)
+        
 
 # Auto-run
 if __name__ == '__main__':
@@ -1311,33 +1351,28 @@ if __name__ == '__main__':
     ens_clim_end_year = 2019
     
     # Dataset versions to use
-    sm_version = '2.3.0'
+    sm_version = '2.3.1'
     rfe_version = '3.1'
     
     # TAMSAT data URL
     remoteurl = 'https://gws-access.jasmin.ac.uk/public/tamsat/tamsat-alert-api_forcing_data'
     
     # Path of current .py file (all data and outputs will be saved here)
-    cwd = os.getcwd()
-    inputdir = os.path.join(cwd, 'input_data')
-    outputdir = os.path.join(cwd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H:%M:%S'))
-    datadir = os.path.join(outputdir, 'data')
-    plotsdir = os.path.join(outputdir, 'plots')
+    wd = os.getcwd()
+    inputdir = os.path.join(wd, 'input_data')
+    #outputdir = os.path.join(cwd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + poi_stamp + '_' +  loc_stamp + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H:%M:%S'))
+    #datadir = os.path.join(outputdir, 'data')
+    #plotsdir = os.path.join(outputdir, 'plots')
     sm_hist_dir = os.path.join(inputdir, 'soil_moisture_historical', 'v' + sm_version)
     sm_fcast_dir = os.path.join(inputdir, 'soil_moisture_forecasts', 'v' + sm_version)
     rfe_hist_dir = os.path.join(inputdir, 'rainfall_historical', 'v' + rfe_version)
     ecmwfs2s_dir = os.path.join(inputdir, 'ecmwfs2s_tercile_forecasts')
     
     # Create directories
-    makedir(datadir)
-    makedir(plotsdir)
     makedir(sm_hist_dir)
     makedir(sm_fcast_dir)
     makedir(rfe_hist_dir)
     makedir(ecmwfs2s_dir)
     
-    # Create API inputs summary file
-    create_inputs_summary_csv(os.path.join(outputdir, 'API_input_arguments.csv'))
-    
     # Execute API
-    wrapper(current_date)
+    wrapper(wd, current_date)
