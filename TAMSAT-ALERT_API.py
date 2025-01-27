@@ -849,7 +849,7 @@ def date_stamps(current_date, fcast_date, poi_start, poi_end, lon_min, lon_max, 
     return fcast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp
 
 # Outputs
-def output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp):    
+def output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, current_date, loc_stamp, currentdate_stamp):    
     # Save output files
     ds_ens_mean_wrsi = ens_mean_wrsi_xr.to_dataset(name='wrsi_forecast_ens_mean')
     ds_ens_sd_wrsi = ens_sd_wrsi_xr.to_dataset(name='wrsi_forecast_ens_sd')
@@ -1310,7 +1310,7 @@ def wrapper(wd, current_date):
     # 15. Create API inputs summary file
     create_inputs_summary_csv(os.path.join(outputdir, 'API_input_arguments.csv'))
     # 16. Produce API outputs (data and plots)
-    output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, loc_stamp, currentdate_stamp)
+    output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast, sm_recent_roi, sm_hist_full_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_start, poi_end, poi_str, fcast_date, current_date, loc_stamp, currentdate_stamp)
         
 
 # Auto-run
