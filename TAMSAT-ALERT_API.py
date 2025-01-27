@@ -764,6 +764,7 @@ def calc_sm_climatology(sm_hist_roi, clim_start_year, clim_end_year, fcast_date,
     if fcast_date <= poi_start.min().values:
         mask = (ds_sm_hist_roi_reshape['time'] >= fcast_date) & (ds_sm_hist_roi_reshape['time'] <= poi_end)
         sm_hist_full_roi = ds_sm_hist_roi_reshape.where(mask)
+        sm_hist_full_roi = sm_hist_full_roi.sel(time=slice(fcast_date, poi_end.max()))
         #sm_hist_full_roi = ds_sm_hist_roi_reshape.sel(time=slice(fcast_date, poi_end.max()))
     else:
         sm_hist_full_roi = sm_hist_poi_roi
@@ -812,7 +813,7 @@ def summary_stats(sm_hist_poi_roi_mean, weights, sm_poi_roi, sm_full_roi, ens_cl
     ens_sd_wrsi_xr = xr.DataArray(ens_sd_wrsi, coords=[lon, lat], dims=['lon', 'lat'])
     clim_mean_wrsi_xr = xr.DataArray(clim_mean_wrsi, coords=[lon, lat], dims=['lon', 'lat'])
     clim_sd_wrsi_xr = xr.DataArray(clim_sd_wrsi, coords=[lon, lat], dims=['lon', 'lat'])
-
+    
     # Compute anom and percent anom
     wrsi_forecast_anom = ens_mean_wrsi_xr - clim_mean_wrsi_xr
     wrsi_forecast_percent_anom = (ens_mean_wrsi_xr / clim_mean_wrsi_xr) * 100
@@ -937,17 +938,18 @@ def prob_dist_plot(plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_x
 def ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp):
     # Create data frame of dates
     #date_labs = pd.to_datetime(ensemble_forecast['time'].values)
-    date_labs = pd.to_datetime(sm_hist_full_roi['time'].values)
+    #date_labs = pd.to_datetime(sm_hist_full_roi['time'].values)
     # Setup plot
-    plt.figure(figsize = (7,4))
+    plt.figure(figsize = (7, 4))
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     plt.gca().xaxis.set_major_locator(mdates.DayLocator(interval=14))
     # Depending on positioning of forecast date relative to poi
     if fcast_date <= poi_start.values.min(): # If all forecast
-        plt.plot(date_labs, np.nanmean(ensemble_forecast, axis=(0, 1)), color="grey", label="Ensemble forecast")   
-        plt.plot(fcast_date, np.nanmean(ensemble_forecast.sel(time = fcast_date)), 
-                    marker="o", color="red", markersize=8, label="Forecast date")
+        date_labs = pd.to_datetime(ensemble_forecast['time'].values)
+        plt.plot(date_labs, np.nanmean(ensemble_forecast.sm_c4grass, axis=(0, 1)), color="grey", label="Ensemble forecast")   
+        plt.plot(fcast_date, np.nanmean(ensemble_forecast.sm_c4grass.sel(time=np.datetime64(fcast_date, 's'))), marker="o", color="red", markersize=8, label="Forecast date")
     else: # If some observed and some forecast
+        date_labs = pd.to_datetime(sm_hist_full_roi['time'].values)
         obs = ensemble_forecast.sel(time=slice(poi_start.values.min(), fcast_date - datetime.timedelta(days=1)))
         fcast = ensemble_forecast.sel(time=slice(fcast_date - datetime.timedelta(days=1), poi_end.values.min()))
         date_obs = pd.to_datetime(obs["time"].values)
@@ -1055,7 +1057,7 @@ def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp,
     #anom_plt.set_title('SM (beta) % anomaly for ' + poi_stamp + "\nIssued "+ forecast_stamp, fontsize = 20)
     anom_plt.set_title('WRSI % anomaly for ' + poi_stamp + "\nIssued "+ forecast_stamp, fontsize = 20)
     anom_cb = plt.pcolormesh(lons, lats, percent_anom.T, vmin = 50, vmax = 150, cmap = RdBu_cust)
-    anom_cb = plt.colorbar(anom_cb)
+    anom_cb = plt.colorbar(anom_cb, extend="both")
     anom_cb.ax.tick_params(labelsize=18)
     anom_plt.set_aspect("auto", adjustable = None)
     anom_plt.add_feature(cfeature.OCEAN, facecolor = "white", zorder = 1)
@@ -1177,7 +1179,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     anom_gl.yformatter = LATITUDE_FORMATTER
     anom_plt.set_title('WRSI % anomaly \nfrom season start until ' + currentdate_stamp, fontsize = 20)
     anom_cb = plt.pcolormesh(lons, lats, sm_wrsi_current_percent_anom, vmin = 50, vmax = 150, cmap = RdBu_cust)
-    anom_cb = plt.colorbar(anom_cb)
+    anom_cb = plt.colorbar(anom_cb, extend="both")
     anom_cb.ax.tick_params(labelsize=18)
     anom_plt.set_aspect("auto", adjustable = None)
     anom_plt.add_feature(cfeature.OCEAN, facecolor = "white", zorder = 1)
@@ -1322,9 +1324,9 @@ if __name__ == '__main__':
     
     """ Testing
     #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
-    poi_start_in = dt.strptime('2024-03-01', '%Y-%m-%d').date()
-    poi_end_in = dt.strptime('2024-08-31', '%Y-%m-%d').date()
-    current_date = dt.strptime('2024-04-10', '%Y-%m-%d').date()
+    poi_start_in = dt.strptime('2025-03-01', '%Y-%m-%d').date()
+    poi_end_in = dt.strptime('2025-05-31', '%Y-%m-%d').date()
+    current_date = dt.strptime('2025-01-10', '%Y-%m-%d').date()
     clim_start_year = 1991
     clim_end_year = 2020
     lon_min = 32.0
