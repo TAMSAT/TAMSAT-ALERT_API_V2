@@ -1063,6 +1063,7 @@ def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp,
     anom_plt.add_feature(cfeature.BORDERS, linewidth = 2)
     # Save and show
     fname = os.path.join(plotsdir, 'wrsi-forecast_map_' + poi_stamp + '_' + forecast_stamp + '.png')
+    plt.tight_layout()
     plt.savefig(fname, dpi=300)
     plt.close()
 
