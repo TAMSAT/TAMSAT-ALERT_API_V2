@@ -5,7 +5,13 @@ Contact: Ross Maidment (TAMSAT Operations Lead): r.i.maidment@reading.ac.uk
 
 ## Summary
 
-The TAMSAT-ALERT API is software (Python code) designed to allow users to easily generate tailored agricultural drought information for their crop growing season using TAMSAT soil moisture estimates and forecasts. The API provides both soil moisture conditions from the start of the season up to a current date in the season as well as forecasts out to the end of the season. The software is designed so that users do not need to edit the Python code and only need provide minimal inputs to allow the API to run, namely:
+The TAMSAT-ALERT API is software (Python code) designed to allow users to easily generate tailored agricultural drought information for their crop growing season using TAMSAT soil moisture estimates and forecasts. 
+
+The API provides soil moisture conditions (expressed as the water requirement satisfaction index (WRSI)) from:
+1)	the start of the season up to a current date in the season (‘WRSI current’)
+2)	the start of the season out to the end of the season, with soil moisture forecasts used to extend WRSI out to the end of the season (‘WRSI forecast’)
+
+The software is designed so that users do not need to edit the Python code and only need provide minimal inputs to allow the API to run, namely:
 
 * Period of interest
 * Region of interest
