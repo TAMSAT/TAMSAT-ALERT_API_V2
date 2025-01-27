@@ -1215,7 +1215,7 @@ def prob_map_plot(datadir, plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mea
     lons = clim_mean_wrsi_xr['lon'].values
     lats = clim_mean_wrsi_xr['lat'].values    
     # Build plot
-    fig = plt.figure(figsize = (10, 10))
+    fig = plt.figure(figsize = (12, 10))
     # Plot climatology
     prob_plt = fig.add_subplot(111, projection = ccrs.PlateCarree())
     prob_plt.set_extent([np.min(lons), np.max(lons), np.min(lats), np.max(lats)])
