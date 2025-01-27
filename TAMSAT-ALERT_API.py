@@ -167,7 +167,7 @@ def check_current_date(current_date, sm_hist_dir, poi_end):
     if current_date == 'LATEST':
         current_date = sm_last_date
         print('-> Latest date is %s' % dt.strftime(sm_last_date, '%Y-%m-%d'))
-        return current_date
+        return dt.strftime(current_date, '%Y-%m-%d')
     
     if (poi_end.values.max() - current_date).days > 160:
         print('-> Warning! the season end is beyond the forecast window: cannot forecast beyond 160 days')
