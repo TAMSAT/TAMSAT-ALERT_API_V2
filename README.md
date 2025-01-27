@@ -1,4 +1,7 @@
 # TAMSAT-ALERT API for soil moisture (Version 2)
+Authors: Vicky Boult, Ross Maidment, Emily Black
+Institution: TAMSAT Group (https://www.tamsat.org.uk), University of Reading
+Contact: Ross Maidment (TAMSAT Operations Lead): r.i.maidment@reading.ac.uk
 
 ## Summary
 
@@ -16,8 +19,10 @@ With this information, the API will download the required data, compute the drou
 
 As the API is a single Python script which takes arguments, it can be run on the command line or within a Jupyter Notebook (provided in this Git repository).
 Full details on how to run the TAMSAT-ALERT API can be found in the document 'TAMSAT-ALERT_API_guide.pdf'. This will provide details on:
-* Python installation (via Anaconda)
-* Required Python libraries
-* API inputs and outputs
-* Running the API (command line or Jupyter Notebook)
+* API overview and changes since the TAMSAT-ALERT API Version 1 (Sections 1 and 2)
+* Prerequisites (Section 3)
+* Python installation via Anaconda and required Python libraries (Section 4)
+* Running the API (command line or Jupyter Notebook) (Section 5)
+* API outputs (Section 6)
+* Test cases (Section 7)
 
