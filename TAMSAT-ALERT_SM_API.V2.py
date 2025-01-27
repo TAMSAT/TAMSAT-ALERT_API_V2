@@ -994,8 +994,8 @@ def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp,
     lat_range = max(lats) - min(lats)
     aspect_ratio = lon_range / lat_range
     num_subplots = 3
-    base_height = 6  # Height of each subplot row
-    fig_width = base_height * aspect_ratio * num_subplots
+    base_height = 8  # Height of each subplot row
+    fig_width = base_height * aspect_ratio * num_subplots * 1.2
     fig_height = base_height
     # Build plot
     #fig = plt.figure(figsize = (32, 10))
@@ -1118,8 +1118,8 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     lat_range = max(lats) - min(lats)
     aspect_ratio = lon_range / lat_range
     num_subplots = 3
-    base_height = 6  # Height of each subplot row
-    fig_width = base_height * aspect_ratio * num_subplots
+    base_height = 8  # Height of each subplot row
+    fig_width = base_height * aspect_ratio * num_subplots * 1.2
     fig_height = base_height
     # Build plot
     #fig = plt.figure(figsize = (32,10))
