@@ -167,6 +167,7 @@ def check_current_date(current_date, sm_hist_dir, poi_end):
     if current_date == 'LATEST':
         current_date = sm_last_date
         print('-> Latest date is %s' % dt.strftime(sm_last_date, '%Y-%m-%d'))
+        return current_date
     
     if (poi_end.values.max() - current_date).days > 160:
         print('-> Warning! the season end is beyond the forecast window: cannot forecast beyond 160 days')
@@ -175,6 +176,7 @@ def check_current_date(current_date, sm_hist_dir, poi_end):
     if current_date > sm_last_date:
         current_date = sm_last_date
         print('-> Specified current date is after the last available day with soil moisture estimates, as such the specified current date (%s) has been reset to %s' % (dt.strftime(current_date, '%Y-%m-%d'), dt.strftime(sm_last_date, '%Y-%m-%d')))
+        return current_date
     
     return current_date
 
