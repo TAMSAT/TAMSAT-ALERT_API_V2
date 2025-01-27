@@ -1185,6 +1185,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     anom_plt.add_feature(cfeature.BORDERS, linewidth = 2)
     # Save and show
     fname = os.path.join(plotsdir, 'wrsi-current_map_' + poi_stamp + '_' + currentdate_stamp + '.png')
+    plt.tight_layout()
     plt.savefig(fname, dpi=300)
     plt.close()
 
