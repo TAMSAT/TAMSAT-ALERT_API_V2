@@ -1,6 +1,6 @@
 # TAMSAT-ALERT API for soil moisture (Version 2)
-Authors: Vicky Boult, Ross Maidment, Emily Black
-Institution: TAMSAT Group (https://www.tamsat.org.uk), University of Reading
+Authors: Vicky Boult, Ross Maidment, Emily Black<br>
+Institution: TAMSAT Group (https://www.tamsat.org.uk), University of Reading<br>
 Contact: Ross Maidment (TAMSAT Operations Lead): r.i.maidment@reading.ac.uk
 
 ## Summary
