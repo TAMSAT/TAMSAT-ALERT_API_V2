@@ -923,13 +923,13 @@ def prob_dist_plot(plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_x
     plt.figure(figsize = (6,4))
     clim_dist_pd.plot.density(color = "black", linewidth = 2, xlim = (xlims), label = "Climatology")
     ens_dist_pd.plot.density(color = "red", linewidth = 2, label = "Forecast")
-    plt.xlabel("Seasonal mean SM (beta)", fontweight = "bold")
+    plt.xlabel("Seasonal mean soil moisture (WRSI)", fontweight = "bold")
     plt.ylabel("Probability", fontweight = "bold")
     plt.axvline(low_a, color = "grey", linestyle = "--", label = "Tercile boundaries")
     plt.axvline(up_a, color = "grey", linestyle = "--")
     plt.legend(loc = 2)
     # Save plot
-    fname = os.path.join(plotsdir, 'probdist_' + poi_stamp + '_' + forecast_stamp + '.png')
+    fname = os.path.join(plotsdir, 'probability_distribution_' + poi_stamp + '_' + forecast_stamp + '.png')
     plt.savefig(fname, dpi=300)
     plt.close()
 
@@ -962,7 +962,7 @@ def ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start,
                         alpha=0.35, color="grey", label="5th-95th percentile")
     plt.axvline(poi_start.values.min(), color="black", linestyle="--", label="POI boundaries")
     plt.axvline(poi_end.values.min(), color="black", linestyle="--")
-    plt.ylabel("Soil moisture (beta)", fontweight="bold")
+    plt.ylabel("Soil moisture (beta/sm_c4grass)", fontweight="bold")
     plt.gcf().autofmt_xdate()
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
@@ -994,7 +994,7 @@ def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp,
     lat_range = max(lats) - min(lats)
     aspect_ratio = lon_range / lat_range
     num_subplots = 3
-    base_height = 8  # Height of each subplot row
+    base_height = 6  # Height of each subplot row
     fig_width = base_height * aspect_ratio * num_subplots
     fig_height = base_height
     # Build plot
@@ -1118,7 +1118,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     lat_range = max(lats) - min(lats)
     aspect_ratio = lon_range / lat_range
     num_subplots = 3
-    base_height = 8  # Height of each subplot row
+    base_height = 6  # Height of each subplot row
     fig_width = base_height * aspect_ratio * num_subplots
     fig_height = base_height
     # Build plot
@@ -1221,7 +1221,7 @@ def prob_map_plot(datadir, plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mea
     prob_gl.ylabel_style = {'size': 18}
     prob_gl.xformatter = LONGITUDE_FORMATTER
     prob_gl.yformatter = LATITUDE_FORMATTER
-    prob_plt.set_title('Probability of lower tercile SM\n' + poi_stamp + " Issued "+ forecast_stamp, fontsize = 20)
+    prob_plt.set_title('Probability of lower tercile soil moisture (WRSI)\n' + poi_stamp + " Issued "+ forecast_stamp, fontsize = 20)
     prob_cb = plt.pcolormesh(lons, lats, b_lower.T, vmin = 0, vmax = 1, cmap = rvb_cust)
     prob_cb = plt.colorbar(prob_cb)
     prob_cb.ax.tick_params(labelsize=18)
@@ -1318,7 +1318,7 @@ if __name__ == '__main__':
     lat_max, lat_min, lon_min, lon_max = args.coords
     weights = args.weights
     
-    """   
+    """ Testing
     #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
     poi_start_in = dt.strptime('2024-03-01', '%Y-%m-%d').date()
     poi_end_in = dt.strptime('2024-08-31', '%Y-%m-%d').date()
