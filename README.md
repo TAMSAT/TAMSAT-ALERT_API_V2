@@ -14,4 +14,6 @@ With this information, the API will download the required data, compute the drou
 
 ## Running the API
 
-As the API is a single Python script which takes arguments, it can be run on the command line or within a Jupyter Notebook (provided in this Git repository). Full details on both are provided in the document 'TAMSAT-ALERT_API_summary.pdf'.
+As the API is a single Python script which takes arguments, it can be run on the command line or within a Jupyter Notebook (provided in this Git repository).
+Full details on how to run the TAMSAT-ALERT API can be found in the document 'TAMSAT-ALERT_API_guide.pdf'. This will provide details on Python installation, required Python libraries, API inputs and outputs and running the API. 
+
