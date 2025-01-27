@@ -823,7 +823,7 @@ def summary_stats(sm_hist_poi_roi_mean, weights, sm_poi_roi, sm_full_roi, ens_cl
     return ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast
 
 # Date stamps for output files
-def date_stamps(fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max):
+def date_stamps(current_date, fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max):
     # Forecast date stamps
     currentdate_stamp = current_date.strftime("%Y-%m-%d")
     fcast_stamp = fcast_date.strftime("%Y-%m-%d")
@@ -1299,7 +1299,7 @@ def wrapper(wd, current_date):
     #sm_hist_full_roi.sm_c4grass.sel(lon=39, lat=-3, method='nearest', ens_year=2005).plot()
     # 13. Produce summmary fields and output text
     ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast = summary_stats(sm_hist_poi_roi_mean, precip_weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year)
-    forecast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp = date_stamps(fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max)
+    forecast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp = date_stamps(current_date, fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max)
     # 14. Make dirs to store outputs
     outputdir = os.path.join(wd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + poi_stamp + '_' +  loc_stamp + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H:%M:%S'))
     datadir = os.path.join(outputdir, 'data')
