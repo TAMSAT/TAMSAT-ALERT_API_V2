@@ -1075,13 +1075,13 @@ def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp,
 def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp):
     # WRSI current (from season start to current date)
     mask = (sm_recent_roi['time'] >= poi_start) & (sm_recent_roi['time'] <= current_date)
-    sm_current = sm_recent_roi.where(mask)
+    sm_current = sm_recent_roi.transpose('time', 'lon', 'lat').where(mask)
     sm_wrsi_current = sm_current.mean(dim='time')
     #sm_current.sel(lon=38, lat=4, method='nearest').plot(); plt.show()
     
     # WRSI current climatology
-    sm_wrsi_current_clim = sm_hist_current_roi_mean.sm_c4grass.transpose()
-    sm_wrsi_current_sd = sm_hist_current_roi_sd.sm_c4grass.transpose()
+    sm_wrsi_current_clim = sm_hist_current_roi_mean.sm_c4grass#.transpose()
+    sm_wrsi_current_sd = sm_hist_current_roi_sd.sm_c4grass#.transpose()
     
     # WRSI current anomaly
     sm_wrsi_current_anom = sm_wrsi_current - sm_wrsi_current_clim
@@ -1132,7 +1132,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     # Plot WRSI current climatology
     clim_plt = fig.add_subplot(131, projection = ccrs.PlateCarree())
     clim_plt.set_extent([np.min(lons), np.max(lons), np.min(lats), np.max(lats)])
-    clim_plt.pcolormesh(lons, lats, sm_wrsi_current_clim, vmin = 0, vmax = vmax, cmap = BrBG_cust)
+    clim_plt.pcolormesh(lons, lats, sm_wrsi_current_clim.transpose(), vmin = 0, vmax = vmax, cmap = BrBG_cust)
     clim_gl = clim_plt.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth = 0.7, color = "black", alpha = 1, linestyle = "--")
     clim_gl.top_labels = False
     clim_gl.right_labels = False
@@ -1141,7 +1141,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     clim_gl.xformatter = LONGITUDE_FORMATTER
     clim_gl.yformatter = LATITUDE_FORMATTER
     clim_plt.set_title('WRSI climatology ' + '(' + str(clim_start_year) + '-' + str(clim_end_year) + ')\n from season start until %s' % currentdate_stamp, fontsize = 20)
-    clim_cb = plt.pcolormesh(lons, lats, sm_wrsi_current_clim, vmin = 0, vmax = vmax, cmap = BrBG_cust)
+    clim_cb = plt.pcolormesh(lons, lats, sm_wrsi_current_clim.transpose(), vmin = 0, vmax = vmax, cmap = BrBG_cust)
     clim_cb = plt.colorbar(clim_cb)
     clim_cb.ax.tick_params(labelsize=18)
     clim_cb.ax.tick_params(top=False, right=False)
@@ -1152,7 +1152,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     # Plot WRSI current
     ens_plt = fig.add_subplot(132, projection = ccrs.PlateCarree())
     ens_plt.set_extent([np.min(lons), np.max(lons), np.min(lats), np.max(lats)])
-    ens_plt.pcolormesh(lons, lats, sm_wrsi_current, vmin = 0, vmax = vmax, cmap = BrBG_cust)
+    ens_plt.pcolormesh(lons, lats, sm_wrsi_current.transpose(), vmin = 0, vmax = vmax, cmap = BrBG_cust)
     ens_gl = ens_plt.gridlines(crs = ccrs.PlateCarree(), draw_labels = True, linewidth = 0.7, color = "black", alpha = 1, linestyle = "--")
     ens_gl.top_labels = False
     ens_gl.right_labels = False
@@ -1161,7 +1161,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     ens_gl.xformatter = LONGITUDE_FORMATTER
     ens_gl.yformatter = LATITUDE_FORMATTER
     ens_plt.set_title('WRSI from season start until %s' % currentdate_stamp , fontsize = 20)
-    ens_cb = plt.pcolormesh(lons, lats, sm_wrsi_current, vmin = 0, vmax = vmax, cmap = BrBG_cust)
+    ens_cb = plt.pcolormesh(lons, lats, sm_wrsi_current.transpose(), vmin = 0, vmax = vmax, cmap = BrBG_cust)
     ens_cb = plt.colorbar(ens_cb)
     ens_cb.ax.tick_params(labelsize=18)
     ens_plt.set_aspect("auto", adjustable = None)
@@ -1171,7 +1171,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     # Plot anomaly
     anom_plt = fig.add_subplot(133, projection = ccrs.PlateCarree())
     anom_plt.set_extent([np.min(lons), np.max(lons), np.min(lats), np.max(lats)])
-    anom_plt.pcolormesh(lons, lats, sm_wrsi_current_percent_anom, vmin = 50, vmax = 150, cmap = RdBu_cust)
+    anom_plt.pcolormesh(lons, lats, sm_wrsi_current_percent_anom.transpose(), vmin = 50, vmax = 150, cmap = RdBu_cust)
     anom_gl = anom_plt.gridlines(crs = ccrs.PlateCarree(), draw_labels = True, linewidth = 0.7, color = "black", alpha = 1, linestyle = "--")
     anom_gl.top_labels = False
     anom_gl.right_labels = False
@@ -1180,7 +1180,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     anom_gl.xformatter = LONGITUDE_FORMATTER
     anom_gl.yformatter = LATITUDE_FORMATTER
     anom_plt.set_title('WRSI % anomaly \nfrom season start until ' + currentdate_stamp, fontsize = 20)
-    anom_cb = plt.pcolormesh(lons, lats, sm_wrsi_current_percent_anom, vmin = 50, vmax = 150, cmap = RdBu_cust)
+    anom_cb = plt.pcolormesh(lons, lats, sm_wrsi_current_percent_anom.transpose(), vmin = 50, vmax = 150, cmap = RdBu_cust)
     anom_cb = plt.colorbar(anom_cb, extend="both")
     anom_cb.ax.tick_params(labelsize=18)
     anom_plt.set_aspect("auto", adjustable = None)
@@ -1327,15 +1327,15 @@ if __name__ == '__main__':
     
     """ Testing
     #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
-    poi_start_in = dt.strptime('2025-03-01', '%Y-%m-%d').date()
-    poi_end_in = dt.strptime('2025-05-31', '%Y-%m-%d').date()
-    current_date = dt.strptime('2025-01-10', '%Y-%m-%d').date()
+    poi_start_in = dt.strptime('2024-10-01', '%Y-%m-%d').date()
+    poi_end_in = dt.strptime('2024-12-31', '%Y-%m-%d').date()
+    current_date = dt.strptime('2024-10-20', '%Y-%m-%d').date()
     clim_start_year = 1991
     clim_end_year = 2020
-    lon_min = 32.0
-    lon_max = 43.0
+    lon_min = 33.2
+    lon_max = 42.2
     lat_min = -5.0
-    lat_max = 6.0
+    lat_max = 5.2
     weights = [float(0.33), float(0.34), float(0.33)]
     #weights = 'ECMWF_S2S'
     """
@@ -1367,9 +1367,6 @@ if __name__ == '__main__':
     # Path of current .py file (all data and outputs will be saved here)
     wd = os.getcwd()
     inputdir = os.path.join(wd, 'input_data')
-    #outputdir = os.path.join(cwd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + poi_stamp + '_' +  loc_stamp + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H:%M:%S'))
-    #datadir = os.path.join(outputdir, 'data')
-    #plotsdir = os.path.join(outputdir, 'plots')
     sm_hist_dir = os.path.join(inputdir, 'soil_moisture_historical', 'v' + sm_version)
     sm_fcast_dir = os.path.join(inputdir, 'soil_moisture_forecasts', 'v' + sm_version)
     rfe_hist_dir = os.path.join(inputdir, 'rainfall_historical', 'v' + rfe_version)
