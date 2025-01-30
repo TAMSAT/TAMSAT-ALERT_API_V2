@@ -1019,8 +1019,8 @@ def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp,
     #clim_plt.set_title('SM (beta) climatology\n' + poi_str + ' ' + str(clim_start_year) + '-' + str(clim_end_year), fontsize = 20)
     clim_plt.set_title('WRSI climatology (' + str(clim_start_year) + '-' + str(clim_end_year) + ')\n' + poi_str, fontsize = 20)
     clim_cb = plt.pcolormesh(lons, lats, clim_mean_wrsi_xr.T, vmin = 0, vmax = vmax, cmap = BrBG_cust)
-    clim_cb = plt.colorbar(clim_cb)
-    clim_cb.ax.tick_params(labelsize=18, extend="max")
+    clim_cb = plt.colorbar(clim_cb, extend="max")
+    clim_cb.ax.tick_params(labelsize=18)
     clim_cb.ax.tick_params(top=False, right=False)
     clim_plt.set_aspect("auto", adjustable = None)
     clim_plt.add_feature(cfeature.OCEAN, facecolor = "white", zorder = 1)
@@ -1113,7 +1113,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     lats = sm_wrsi_current_clim['lat'].values
     # Calculate max values to standardised colorbars on both plots
     vmax = np.nanmax([sm_wrsi_current, sm_wrsi_current_clim, clim_mean_wrsi_xr, ens_mean_wrsi_xr])
-    vmax = 60
+    vmax = 60 
     
     # Colormap setup - make 'bad' values grey
     BrBG_cust = matplotlib.cm.get_cmap("BrBG")
