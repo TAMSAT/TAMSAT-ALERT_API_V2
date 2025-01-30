@@ -1113,7 +1113,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     lats = sm_wrsi_current_clim['lat'].values
     # Calculate max values to standardised colorbars on both plots
     vmax = np.nanmax([sm_wrsi_current, sm_wrsi_current_clim, clim_mean_wrsi_xr, ens_mean_wrsi_xr])
-    vmax = 70 
+    vmax = 60
     
     # Colormap setup - make 'bad' values grey
     BrBG_cust = matplotlib.cm.get_cmap("BrBG")
