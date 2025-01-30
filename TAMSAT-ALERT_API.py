@@ -170,7 +170,7 @@ def check_current_date(current_date, sm_hist_dir, poi_end):
         return current_date
     
     if (poi_end.values.max() - current_date).days > 160:
-        print('-> Warning! the season end is beyond the forecast window: cannot forecast beyond 160 days')
+        print('-> Warning! the season end is beyond the forecast window: cannot forecast beyond 160 days.')
         sys.exit()
     
     if current_date > sm_last_date:
@@ -972,7 +972,7 @@ def ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start,
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = dict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys(), loc=2)
-    fname = os.path.join(plotsdir, 'timeseries_' + poi_stamp + '_' + forecast_stamp + '_' + loc_stamp + '.png')
+    fname = os.path.join(plotsdir, 'timeseries_' + poi_stamp + '_' + forecast_stamp + '.png')
     plt.savefig(fname, dpi=300)
     plt.close()
 
