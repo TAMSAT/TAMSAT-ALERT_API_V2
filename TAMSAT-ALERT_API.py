@@ -792,7 +792,8 @@ def calc_sm_climatology(sm_hist_roi, clim_start_year, clim_end_year, fcast_date,
 def summary_stats(sm_hist_poi_roi_mean, weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year):
     lon = sm_hist_poi_roi_mean['lon']
     lat = sm_hist_poi_roi_mean['lat']
-    sm_hist_poi_roi_mean_ensyears = sm_hist_poi_roi_mean.sel(ens_year=slice(ens_clim_start_year, ens_clim_end_year)) # Using only 2005-2019 as these are the ensemble forecast years
+    #sm_hist_poi_roi_mean_ensyears = sm_hist_poi_roi_mean.sel(ens_year=slice(ens_clim_start_year, ens_clim_end_year)) # Using only 2005-2019 as these are the ensemble forecast years
+    sm_hist_poi_roi_mean_ensyears = sm_hist_poi_roi_mean.sel(ens_year=slice(clim_start_year, clim_end_year)) # Using specified clim_years
     
     # Calculate climatological mean and standard deviation from historical data for poi
     clim_mean_wrsi = np.average(sm_hist_poi_roi_mean_ensyears.sm_c4grass.values, axis = 2)
@@ -1329,7 +1330,7 @@ if __name__ == '__main__':
     #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
     poi_start_in = dt.strptime('2024-10-01', '%Y-%m-%d').date()
     poi_end_in = dt.strptime('2024-12-31', '%Y-%m-%d').date()
-    current_date = dt.strptime('2024-10-20', '%Y-%m-%d').date()
+    current_date = dt.strptime('2024-12-31', '%Y-%m-%d').date()
     clim_start_year = 1991
     clim_end_year = 2020
     lon_min = 33.2
