@@ -871,8 +871,8 @@ def output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_m
     ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp)    
     
     #if sys.argv[7] == "region":
-    wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp)
-    wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp)
+    vmax = wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean, sm_hist_current_roi_sd, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_start, current_date, poi_stamp, clim_start_year, clim_end_year, loc_stamp, currentdate_stamp, forecast_stamp)
+    wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp, vmax)
     prob_map_plot(datadir, plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
 
 # Calculate tercile probabilities
@@ -977,12 +977,12 @@ def ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start,
     plt.close()
 
 # Plot WRSI forecast maps
-def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp):
+def wrsi_forecast_plot(plotsdir, clim_mean_wrsi_xr, ens_mean_wrsi_xr, poi_stamp, forecast_stamp, clim_start_year, clim_end_year, poi_str, loc_stamp, vmax):
     # Extract lons and lats for plotting axies
     lons = clim_mean_wrsi_xr['lon'].values
     lats = clim_mean_wrsi_xr['lat'].values
     # Calculate max values to standardised colorbars on both plots
-    vmax = np.nanmax([clim_mean_wrsi_xr, ens_mean_wrsi_xr])
+    #vmax = np.nanmax([clim_mean_wrsi_xr, ens_mean_wrsi_xr])
     # Calculate percent anomaly    
     percent_anom = (ens_mean_wrsi_xr / clim_mean_wrsi_xr) * 100
     # Save to netCDF - perc_anom
@@ -1193,6 +1193,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     plt.tight_layout()
     plt.savefig(fname, dpi=300)
     plt.close()
+    return(vmax)
 
 # Plot probability of lower tercile map
 def prob_map_plot(datadir, plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp):
