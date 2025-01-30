@@ -1112,7 +1112,8 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     lons = sm_wrsi_current_clim['lon'].values
     lats = sm_wrsi_current_clim['lat'].values
     # Calculate max values to standardised colorbars on both plots
-    vmax = np.nanmax([sm_wrsi_current, sm_wrsi_current_clim, clim_mean_wrsi_xr, ens_mean_wrsi_xr]) 
+    vmax = np.nanmax([sm_wrsi_current, sm_wrsi_current_clim, clim_mean_wrsi_xr, ens_mean_wrsi_xr])
+    vmax = 70 
     
     # Colormap setup - make 'bad' values grey
     BrBG_cust = matplotlib.cm.get_cmap("BrBG")
@@ -1143,7 +1144,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     clim_gl.yformatter = LATITUDE_FORMATTER
     clim_plt.set_title('WRSI climatology ' + '(' + str(clim_start_year) + '-' + str(clim_end_year) + ')\n from season start until %s' % currentdate_stamp, fontsize = 20)
     clim_cb = plt.pcolormesh(lons, lats, sm_wrsi_current_clim.transpose(), vmin = 0, vmax = vmax, cmap = BrBG_cust)
-    clim_cb = plt.colorbar(clim_cb)
+    clim_cb = plt.colorbar(clim_cb, extend="upper")
     clim_cb.ax.tick_params(labelsize=18)
     clim_cb.ax.tick_params(top=False, right=False)
     clim_plt.set_aspect("auto", adjustable = None)
@@ -1163,7 +1164,7 @@ def wrsi_current_plot(datadir, plotsdir, sm_recent_roi, sm_hist_current_roi_mean
     ens_gl.yformatter = LATITUDE_FORMATTER
     ens_plt.set_title('WRSI from season start until %s' % currentdate_stamp , fontsize = 20)
     ens_cb = plt.pcolormesh(lons, lats, sm_wrsi_current.transpose(), vmin = 0, vmax = vmax, cmap = BrBG_cust)
-    ens_cb = plt.colorbar(ens_cb)
+    ens_cb = plt.colorbar(ens_cb, extend="upper")
     ens_cb.ax.tick_params(labelsize=18)
     ens_plt.set_aspect("auto", adjustable = None)
     ens_plt.add_feature(cfeature.OCEAN, facecolor = "white", zorder = 1)
