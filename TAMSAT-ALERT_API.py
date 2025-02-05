@@ -230,7 +230,8 @@ def download_historical_data(remoteurl, datatype, version, yearstart, yearend):
         print(comment)
         for f in flist_missing:
             fname = os.path.basename(f)
-            url_file = os.path.join(remoteurl, datatype, 'v' + version, fname)            
+            #url_file = os.path.join(remoteurl, datatype, 'v' + version, fname)
+            url_file = remoteurl + '/' + datatype + '/' + 'v' + version + '/' + fname          
             os.chdir(os.path.dirname(f))
             try:
                 filename = wget.download(url_file, bar=None)
@@ -245,7 +246,8 @@ def download_forecast_data(remoteurl, sm_fcast_dir, version, current_date):
         os.remove(fcast_flist_local)
     
     # Download latest list of TAMSAT-ALERT ensemble forecast filenames
-    fcast_flist_remote = os.path.join(remoteurl, 'sm_fcast', 'v' + version, 'tamsat-alert_fcast_filelist.csv')
+    #fcast_flist_remote = os.path.join(remoteurl, 'sm_fcast', 'v' + version, 'tamsat-alert_fcast_filelist.csv')
+    fcast_flist_remote = remoteurl + '/' +  'sm_fcast' + '/' + 'v' + version + '/' + 'tamsat-alert_fcast_filelist.csv'
     os.chdir(sm_fcast_dir)
     try:
         wget.download(fcast_flist_remote, bar=None)
@@ -262,7 +264,8 @@ def download_forecast_data(remoteurl, sm_fcast_dir, version, current_date):
     # Download required forecast file
     fcast_fname_local = os.path.join(sm_fcast_dir, 'alert_' + fcast_stamp + '_ens.daily.nc')
     if not os.path.exists(fcast_fname_local):
-        fcast_fname_remote = os.path.join(remoteurl, 'sm_fcast', 'v' + sm_version, 'alert_' + fcast_stamp + '_ens.daily.nc')
+        #fcast_fname_remote = os.path.join(remoteurl, 'sm_fcast', 'v' + sm_version, 'alert_' + fcast_stamp + '_ens.daily.nc')
+        fcast_fname_remote = remoteurl + '/' + 'sm_fcast' + '/' + 'v' + sm_version + '/' + 'alert_' + fcast_stamp + '_ens.daily.nc'
         os.chdir(sm_fcast_dir)
         try:
             '-> Downloading required soil moisture forecast file, this might take a few minutes ...'
@@ -408,7 +411,8 @@ def process_weights(weights, current_date, fcast_date, poi_end):
             os.remove(ecmwfs2s_flist_local)
         
         # Download latest list of TAMSAT-ALERT ensemble forecast filenames
-        ecmwfs2s_flist_remote = os.path.join(remoteurl, 'ecmwf_s2s_tercile_prob', 'ecmwf-s2s_tercile_fcast_filelist.csv')
+        #ecmwfs2s_flist_remote = os.path.join(remoteurl, 'ecmwf_s2s_tercile_prob', 'ecmwf-s2s_tercile_fcast_filelist.csv')
+        ecmwfs2s_flist_remote = remoteurl + '/' + 'ecmwf_s2s_tercile_prob' + '/' + 'ecmwf-s2s_tercile_fcast_filelist.csv'
         os.chdir(ecmwfs2s_dir)
         try:
             wget.download(ecmwfs2s_flist_remote, bar=None)
@@ -425,7 +429,8 @@ def process_weights(weights, current_date, fcast_date, poi_end):
         # Download required ECMWF-S2S tercile forecast file
         ecmwfs2s_fname_local = os.path.join(ecmwfs2s_dir, 'ecmwfs2s_tp47_africa_terciles_' + ecmwfs2s_stamp + '.nc')
         if not os.path.exists(ecmwfs2s_fname_local):
-            ecmwfs2s_fname_remote = os.path.join(remoteurl, 'ecmwf_s2s_tercile_prob', os.path.basename(ecmwfs2s_fname_local))
+            #ecmwfs2s_fname_remote = os.path.join(remoteurl, 'ecmwf_s2s_tercile_prob', os.path.basename(ecmwfs2s_fname_local))
+            ecmwfs2s_fname_remote = remoteurl + '/' + 'ecmwf_s2s_tercile_prob' + '/' + os.path.basename(ecmwfs2s_fname_local)
             os.chdir(ecmwfs2s_dir)
             try:
                 '-> Downloading required ECMWF-S2S forecast file ...'
