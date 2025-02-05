@@ -1310,7 +1310,7 @@ def wrapper(wd, current_date):
     ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_mean_wrsi_xr, clim_sd_wrsi_xr, wrsi_forecast_anom, wrsi_forecast_percent_anom, ensemble_forecast = summary_stats(sm_hist_poi_roi_mean, precip_weights, sm_poi_roi, sm_full_roi, ens_clim_start_year, ens_clim_end_year)
     forecast_stamp, poi_stamp, poi_str, loc_stamp, currentdate_stamp = date_stamps(current_date, fcast_date, poi_start, poi_end, lon_min, lon_max, lat_min, lat_max)
     # 14. Make dirs to store outputs
-    outputdir = os.path.join(wd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + poi_stamp + '_' +  loc_stamp + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H-%M'))
+    outputdir = os.path.join(wd, 'outputs', dt.strftime(current_date, format='%Y-%m-%d') + '_' + poi_stamp + '_' +  loc_stamp + '_' + dt.strftime(dt.now(), format='%Y-%m-%dT%H%M'))
     makedir(outputdir)
     datadir = os.path.join(outputdir, 'data')
     plotsdir = os.path.join(outputdir, 'plots')
