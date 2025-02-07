@@ -573,6 +573,7 @@ def import_sm_data(poi_start, poi_end, current_date, sm_hist_dir, sm_fcast_fname
     #fcast_stamp = fcast_file.strftime("%Y-%m-%d")
     #fname = os.path.join(sm_fcast_dir, 'alert_' + fcast_stamp.replace('-', '') + '_ens.daily.nc')
     ds_sm_fcast = xr.open_dataset(sm_fcast_fname)
+    ds_sm_fcast = ds_sm_fcast.sel(time=~((ds_sm_fcast.time.dt.month == 2) & (ds_sm_fcast.time.dt.day == 29)))
     ds_sm_fcast = ds_sm_fcast.assign_coords(time=[pd.to_datetime(x).date() for x in ds_sm_fcast['time'].values])
     ds_sm_fcast = ds_sm_fcast.assign_coords({"ens_year": np.arange(2005, 2019 + 1)})
     da_sm_fcast = ds_sm_fcast['sm_c4grass']
@@ -870,7 +871,7 @@ def output_forecasts(datadir, plotsdir, ens_mean_wrsi_xr, ens_sd_wrsi_xr, clim_m
     fname = os.path.join(datadir, 'ensemble-wrsi-forecast_' + poi_stamp + '_' + forecast_stamp + '.nc')
     ensemble_forecast = ensemble_forecast.assign_coords(time=ensemble_forecast.time.values.astype("datetime64[s]"))
     ensemble_forecast.to_netcdf(fname)
-    
+
     terciles_text(datadir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
     prob_dist_plot(plotsdir, clim_mean_wrsi_xr, clim_sd_wrsi_xr, ens_mean_wrsi_xr, ens_sd_wrsi_xr, poi_stamp, forecast_stamp, loc_stamp)
     ensemble_timeseries_plot(plotsdir, ensemble_forecast, fcast_date, poi_start, poi_end, sm_hist_full_roi, poi_stamp, forecast_stamp, loc_stamp)    
@@ -1336,9 +1337,9 @@ if __name__ == '__main__':
     
     """ Testing
     #poi_start_in = '/gws/nopw/j04/tamsat/rmaidment/KMD/T-A_API_KMD/data/kenya_current_lr_sos.nc'
-    poi_start_in = dt.strptime('2024-10-01', '%Y-%m-%d').date()
-    poi_end_in = dt.strptime('2024-12-31', '%Y-%m-%d').date()
-    current_date = dt.strptime('2024-12-31', '%Y-%m-%d').date()
+    poi_start_in = dt.strptime('2024-03-01', '%Y-%m-%d').date()
+    poi_end_in = dt.strptime('2024-05-31', '%Y-%m-%d').date()
+    current_date = dt.strptime('2024-02-01', '%Y-%m-%d').date()
     clim_start_year = 1991
     clim_end_year = 2020
     lon_min = 33.2
