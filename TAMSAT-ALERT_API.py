@@ -346,7 +346,7 @@ def convert_dekad_to_datetime(fname):
     ds_date = xr.open_dataset(fname)
     
     # Fill NaT (over the ocean) with max dekad - this is ok as there is no soil moisture over the ocean
-    ds_date['dekad_capped_filled'] = ds_date['SOS_capped_filled'].fillna(ds_date['SOS_capped_filled'].max())
+    ds_date['dekad'] = ds_date['SOS'].fillna(ds_date['SOS'].max())
     
     # Next, create dekad LUT for given year/next year of dekad number and corresponding end of dekad date 
     # e.g. dekad '4' for 2024 equates to '2024-02-10'
@@ -356,7 +356,7 @@ def convert_dekad_to_datetime(fname):
     dekad_LUT['End_Date_dt'] = [pd.to_datetime(x, format='%d-%m-%Y').date() for x in dekad_LUT.End_Date]
     
     # Finally, convert dekad number to actual datetime object
-    ds_date['dekad_datetime'] = replace_dekad_with_dates(ds_date['dekad_capped_filled'], dekad_LUT)
+    ds_date['dekad_datetime'] = replace_dekad_with_dates(ds_date['dekad'], dekad_LUT)
     
     return (ds_date['dekad_datetime'])
 
